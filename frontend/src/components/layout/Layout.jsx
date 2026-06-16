@@ -20,7 +20,7 @@ const NAV_BASE = [
   { to: '/declarations',   icon: ClipboardList,    label: 'Déclarations'        },
   { to: '/nomenclature',   icon: BookOpen,         label: 'Nomenclature'        },
   { to: '/glossaire',      icon: GraduationCap,    label: 'Glossaire'           },
-  { to: '/inspections',    icon: Shield,           label: 'Inspections'         },
+  { to: '/documents',      icon: FileText,         label: 'Documents'           },        
   { to: '/stats',          icon: BarChart3,        label: 'Statistiques'        },
   { to: '/archive',        icon: FolderOpen,       label: 'Archive'             },
   { to: '/alertes',        icon: Bell,             label: 'Alertes'             },

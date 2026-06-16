@@ -6,15 +6,22 @@ api.interceptors.request.use(cfg => {
   return cfg
 })
 api.interceptors.response.use(r => r, async e => {
-  if (e.response?.status === 401) {
+  if (e.response?.status === 401 && !e.config._retry) {
     const ref = localStorage.getItem('refresh_token')
     if (ref) {
       try {
+        e.config._retry = true
         const { data } = await axios.post('/api/auth/token/refresh/', { refresh: ref })
         localStorage.setItem('access_token', data.access)
         e.config.headers.Authorization = `Bearer ${data.access}`
         return api(e.config)
-      } catch { localStorage.clear(); window.location.href = '/login' }
+      } catch {
+        localStorage.clear()
+        window.location.href = '/login'
+      }
+    } else {
+      localStorage.clear()
+      window.location.href = '/login'
     }
   }
   return Promise.reject(e)

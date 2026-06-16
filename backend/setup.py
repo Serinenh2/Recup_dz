@@ -5,6 +5,7 @@ Usage: python setup.py
 """
 import os
 import django
+from datetime import date, timedelta
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
@@ -14,7 +15,7 @@ U = get_user_model()
 
 # ── Create superuser ──────────────────────────────────────────────────────────
 if not U.objects.filter(username='admin').exists():
-    U.objects.create_superuser(
+    admin = U.objects.create_superuser(
         username    = 'admin',
         password    = 'Admin2024!',
         email       = 'admin@recup-dz.gov.dz',
@@ -26,6 +27,7 @@ if not U.objects.filter(username='admin').exists():
     print('   Username: admin')
     print('   Password: Admin2024!')
 else:
+    admin = U.objects.get(username='admin')
     print('ℹ️  Superuser already exists (admin)')
 
 # Create inspecteur
@@ -97,14 +99,14 @@ if Nomenclature.objects.count() < 10:
 else:
     print(f'ℹ️  Nomenclature already loaded: {Nomenclature.objects.count()} entries')
 
-# ── Create sample recuperateur ────────────────────────────────────────────────
-from apps.recuperateurs.models import Recuperateur, DehetAutorise
+# ── Create sample recuperateurs ───────────────────────────────────────────────
+from apps.recuperateurs.models import Recuperateur, AgrementRecuperateur
 
 if not Recuperateur.objects.exists():
     r = Recuperateur.objects.create(
         nom_raison_sociale = 'SARL EcoRecup Alger',
         nom_commercial     = 'EcoRecup',
-        type_recuperateur  = 'CAT2',
+        type_recuperateur  = 'AVEC_AGREMENT',
         statut_juridique   = 'SARL',
         responsable        = 'Mohamed Benali',
         wilaya             = '16',
@@ -112,18 +114,26 @@ if not Recuperateur.objects.exists():
         adresse            = 'Zone Industrielle Rouiba, Alger',
         telephone          = '+213 21 801 234',
         email              = 'contact@ecorecup.dz',
-        num_agrement       = 'AGR-16-REC-2024-001',
         statut             = 'ACTIF',
     )
-    from datetime import date, timedelta
-    r.date_agrement    = date.today().replace(year=date.today().year - 1)
-    r.date_expiration  = date.today() + timedelta(days=400)
-    r.save()
-    DehetAutorise.objects.create(recuperateur=r, code_dechet='13.02.01',
-        designation='Huiles moteur usagées', classe='S')
-    DehetAutorise.objects.create(recuperateur=r, code_dechet='16.01.03',
-        designation='Pneus hors usage', classe='S')
+    AgrementRecuperateur.objects.create(
+        recuperateur    = r,
+        numero_agrement = 'AGR-16-REC-2024-001',
+        date_delivrance = date.today().replace(year=date.today().year - 1),
+        date_fin        = date.today() + timedelta(days=400),
+        codes_dechets   = '13.02.01,16.01.03',
+        statut          = 'ACTIF',
+    )
     print('✅ Sample recuperateur created: SARL EcoRecup Alger')
+
+    r2 = Recuperateur.objects.create(
+        user               = admin,
+        nom_raison_sociale = 'SARL Gold Environment Service',
+        type_recuperateur  = 'AVEC_AGREMENT',
+        statut             = 'ACTIF',
+        wilaya             = '35',
+    )
+    print('✅ Recuperateur created:', r2.nom_raison_sociale)
 
 print()
 print('=' * 50)

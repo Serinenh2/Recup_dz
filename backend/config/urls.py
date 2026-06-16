@@ -20,4 +20,5 @@ urlpatterns = [
     path('api/archive/', include('apps.archive.urls')),
     path('api/tenants/', include('apps.tenants.urls')),
     path('api/accounts/', include('apps.accounts.urls')),
+    path('api/declarations/', include('apps.declarations.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
