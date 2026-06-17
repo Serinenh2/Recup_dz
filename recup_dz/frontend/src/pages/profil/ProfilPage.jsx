@@ -9,10 +9,19 @@ import { useAuthStore } from '../../store'
 import api from '../../api'
 import { WILAYAS, getCommunesByWilaya } from '../../utils/algeria_geo'
 import { NOMENCLATURE } from '../nomenclature/nomenclatureData'
+import { NOMENCLATURE_GOLD } from '../nomenclature/nomenclatureGold'
 import DateInput from '../../components/common/DateInput'
+
+// Merged lookup — NOMENCLATURE_GOLD has real designations + dangerosite + annexe
+const NOM_MAP = (() => {
+  const m = {}
+  NOMENCLATURE.forEach(n => { m[n.code] = n })
+  NOMENCLATURE_GOLD.forEach(n => { m[n.code] = n })
+  return m
+})()
 import toast from 'react-hot-toast'
 
-const findCode = (code) => NOMENCLATURE.find(n => n.code === code) || null
+const findCode = (code) => NOM_MAP[code] || null
 
 const ETENDUE_CFG = {
   NATIONALE: { label: 'Nationale',     icon: '🇩🇿' },
@@ -38,7 +47,7 @@ function CodesPicker({ value, onChange }) {
   , [value])
 
   const filtered = useMemo(() =>
-    NOMENCLATURE
+    Object.values(NOM_MAP)
       .filter(n => !classeFilter || n.classe === classeFilter)
       .filter(n => !search ||
         n.code.toLowerCase().includes(search.toLowerCase()) ||
@@ -798,3 +807,4 @@ export default function ProfilPage() {
     </div>
   )
 }
+
