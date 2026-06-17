@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Package, FileText, ClipboardList,
   BarChart3, LogOut, ChevronLeft, ChevronRight,
   Menu, Moon, Sun, Recycle, Shield, BookOpen, X, User,
-  Award, Bell, GraduationCap, Building2, Landmark, FolderOpen, Crown
+  Award, Bell, GraduationCap, Building2, Landmark, FolderOpen, Crown, Bot
 } from 'lucide-react'
 import { useAuthStore } from '../../store'
 import clsx from 'clsx'
@@ -22,6 +22,7 @@ const NAV_BASE = [
   { to: '/glossaire',      icon: GraduationCap,    label: 'Glossaire'           },
   { to: '/documents',      icon: FileText,         label: 'Documents'           },        
   { to: '/stats',          icon: BarChart3,        label: 'Statistiques'        },
+  { to: '/ai-assistant',   icon: Bot,              label: 'Assistant Réglementaire' },
   { to: '/archive',        icon: FolderOpen,       label: 'Archive'             },
   { to: '/alertes',        icon: Bell,             label: 'Alertes'             },
 ]

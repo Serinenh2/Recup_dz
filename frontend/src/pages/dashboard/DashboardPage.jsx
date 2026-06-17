@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, Package, FileText, AlertTriangle, CheckCircle2, Clock, XCircle, TrendingUp } from 'lucide-react'
+import { Users, Package, FileText, AlertTriangle, CheckCircle2, Clock, XCircle, TrendingUp, Bot, Bell } from 'lucide-react'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { recuperateursAPI } from '../../api'
+import { aiDashboardAPI } from '../ai-assistant/api'
 
 const COLORS = ['#4F46E5','#10b981','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#6b7280']
 
 export default function DashboardPage() {
   const [stats,  setStats]  = useState(null)
   const [alerts, setAlerts] = useState([])
+  const [aiStats, setAiStats] = useState(null)
 
   useEffect(() => {
     recuperateursAPI.stats().then(r => setStats(r.data)).catch(() => {})
     recuperateursAPI.alerts().then(r => setAlerts(r.data.alerts || [])).catch(() => {})
+    aiDashboardAPI.statistiques().then(r => setAiStats(r.data)).catch(() => {})
   }, [])
 
   const TYPE_LABELS = {
@@ -41,7 +44,7 @@ export default function DashboardPage() {
       )}
 
       {/* KPIs */}
-      {stats && (
+{stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Total récupérateurs', value: stats.total,      icon: Users,        color: 'bg-primary-500' },
@@ -59,6 +62,29 @@ export default function DashboardPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* AI KPIs */}
+      {aiStats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Questions posées à l'IA", value: aiStats.questions_posees, icon: Bot, color: 'bg-primary-500' },
+            { label: 'Alertes IA', value: aiStats.alertes_detectees, icon: Bell, color: 'bg-amber-500' },
+            { label: 'BSD analysés par IA', value: aiStats.bsd_analyses, icon: FileText, color: 'bg-emerald-500' },
+          ].map(k => (
+            <div key={k.label} className="card p-5 flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl ${k.color} flex items-center justify-center flex-shrink-0`}>
+                <k.icon size={22} className="text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{k.value ?? '—'}</p>
+                <p className="text-xs text-slate-500 leading-tight">{k.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
         </div>
       )}
 
@@ -112,7 +138,6 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             </div>
           )}
-        </div>
       )}
 
       {/* Quick links */}

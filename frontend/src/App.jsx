@@ -22,7 +22,7 @@ import StatsPage        from './pages/stats/index'
 import ArchivePage      from './pages/archive/index'
 import SuperAdminPage   from './pages/superadmin/index'
 import ProfilPage       from './pages/profil/ProfilPage'
-import DocumentsPage from './pages/documents/index'
+import AIAssistantPage  from './pages/ai-assistant/index'
 
 function PrivateRoute({ children }) {
   const user    = useAuthStore(s => s.user)
@@ -66,6 +66,7 @@ export default function App() {
         <Route path="stats"               element={<StatsPage />} />
         <Route path="archive"             element={<ArchivePage />} />
         <Route path="documents"           element={<DocumentsPage />} />
+        <Route path="ai-assistant"          element={<AIAssistantPage />} />
         <Route path="superadmin"          element={<SuperAdminPage />} />
         <Route path="profil"              element={<ProfilPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
