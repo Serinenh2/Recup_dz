@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'apps.administration',
     'apps.archive',
     'apps.tenants',
+    'apps.ai_assistant',
 ]
 
 MIDDLEWARE = [
