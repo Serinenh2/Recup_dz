@@ -17,6 +17,9 @@ from apps.bsd.models import BordereauSuiviDechet
 from apps.operations.models import OperationRecuperation
 
 
+from .glossaire_data import rechercher_glossaire, formater_glossaire
+
+
 def detecter_anomalies_bsd():
     anomalies = []
     aujourd_hui = timezone.now().date()
@@ -148,8 +151,42 @@ class AIConversationViewSet(viewsets.ModelViewSet):
             except Exception:
                 pass
 
+        resultats_glossaire = rechercher_glossaire(message)
+        if resultats_glossaire:
+            reponse_glossaire = formater_glossaire(resultats_glossaire)
+            reponse_ctx = self._reponse_contextuelle(message, msg_lower, conversation)
+            if reponse_ctx:
+                return {'message': reponse_glossaire + '\n\n---\n\n' + reponse_ctx['message']}
+            return {'message': reponse_glossaire}
+
+        reponse_ctx = self._reponse_contextuelle(message, msg_lower, conversation)
+        if reponse_ctx:
+            return reponse_ctx
+
+        greetings = ['bonjour', 'salut', 'hello', 'aide', 'help', 'coucou']
+        if any(mot in msg_lower for mot in greetings):
+            return {
+                'message': """Bonjour ! Je suis l'Assistant Réglementaire Déchets de RECUP-DZ. Je peux vous aider avec :
+
+1. **Glossaire des déchets** : Définitions de tous les termes réglementaires (BSD, agrément, déchet dangereux...)
+2. **Recherche nomenclature** : Recherche par nom ou code
+3. **Vérification des agréments** : Statuts et validité
+4. **Analyse des BSD** : Retards, incomplets, conformité
+5. **Analyse des stocks** : Dépassements et risques
+6. **Alertes intelligentes** : Anomalies détectées automatiquement
+7. **Rapports réglementaires** : Mensuels, trimestriels, annuels
+
+Essayez par exemple : *"Qu'est-ce qu'un BSD ?"*, *"déchet dangereux"*, *"agrément"*
+Comment puis-je vous aider aujourd'hui ?"""
+            }
+
+        return {
+            'message': f"J'ai bien reçu votre message : \"{message}\".\n\nJe peux vous aider avec :\n\n1. **Glossaire des déchets** — Définitions de tous les termes réglementaires\n2. **Recherche nomenclature** — Codes et classifications des déchets\n3. **Vérification des agréments** — Statuts et validité\n4. **Analyse des BSD** — Retards, incomplets, conformité\n5. **Analyse des stocks** — Dépassements et risques\n6. **Réglementation** — Loi 01-19, Décret 06-104\n\nEssayez par exemple : *\"Qu'est-ce qu'un BSD ?\"*, *\"déchet dangereux\"*, *\"agrément\"*"
+        }
+
+    def _reponse_contextuelle(self, message, msg_lower, conversation):
         keywords = {
-            'déchet': 'nomenclature', 'déchets': 'nomenclature', 'nomenclature': 'nomenclature',
+            'nomenclature': 'nomenclature',
             'code': 'nomenclature', 'classification': 'nomenclature'
         }
         if any(mot in msg_lower for mot in keywords) or 'huile' in msg_lower or 'batterie' in msg_lower or 'métal' in msg_lower:
@@ -167,29 +204,11 @@ class AIConversationViewSet(viewsets.ModelViewSet):
         if any(mot in msg_lower for mot in stock_keywords):
             return self._analyser_stocks()
 
-        loi_keywords = ['loi', 'loi 01-19', 'décret', 'réglementation', 'loi 01-19']
+        loi_keywords = ['loi 01-19', 'décret']
         if any(mot in msg_lower for mot in loi_keywords):
             return self._recherche_reglementaire(message)
 
-        greetings = ['bonjour', 'salut', 'hello', 'aide', 'help', 'coucou']
-        if any(mot in msg_lower for mot in greetings):
-            return {
-                'message': """Bonjour ! Je suis l'Assistant Réglementaire Déchets de RECUP-DZ. Je peux vous aider avec :
-
-1. **Recherche réglementaire** : Loi 01-19, Décret 06-104, procédures
-2. **Identification des déchets** : Recherche par nom ou code
-3. **Vérification des agréments** : Statuts et validité
-4. **Analyse des BSD** : Retards, incomplets, conformité
-5. **Analyse des stocks** : Dépassements et risques
-6. **Alertes intelligentes** : Anomalies détectées automatiquement
-7. **Rapports réglementaires** : Mensuels, trimestriels, annuels
-
-Comment puis-je vous aider aujourd'hui ?"""
-            }
-
-        return {
-            'message': f"J'ai bien reçu votre message : \"{message}\".\n\nJe suis connecté à la plateforme et peux analyser vos données. Essayez de me poser des questions sur :\n- Les agréments\n- Les BSD\n- La nomenclature des déchets\n- La réglementation algérienne\n- Les stocks"
-        }
+        return None
 
     def _rechercher_nomenclature(self, message):
         from apps.nomenclature.models import Nomenclature

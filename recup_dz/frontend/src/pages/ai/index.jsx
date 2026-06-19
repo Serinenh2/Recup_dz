@@ -4,7 +4,6 @@ import {
 } from 'lucide-react'
 import api from '../../api'
 import toast from 'react-hot-toast'
-import { GLOSSAIRE, CATEGORIES } from '../glossaire/glossaireData'
 
 const aiAPI = {
   getConversations:  ()         => api.get('/ai/conversations/'),
@@ -27,33 +26,6 @@ function formatMarkdown(text) {
     .replace(/^⚠️ (.+)$/gm, '<p class="text-amber-600 dark:text-amber-400 text-xs font-semibold">⚠️ $1</p>')
     .replace(/\n\n/g, '</p><p class="mt-1">')
     .replace(/\n/g, '<br/>')
-}
-
-function searchGlossary(query) {
-  const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  const results = []
-  for (const term of GLOSSAIRE) {
-    const searchable = [
-      term.terme_fr, term.terme_ar,
-      term.definition_fr, term.definition_ar,
-      term.reference || ''
-    ].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    if (searchable.includes(q)) {
-      results.push(term)
-    }
-  }
-  return results.slice(0, 5)
-}
-
-function formatGlossaryResult(term) {
-  const cat = CATEGORIES.find(c => c.id === term.categorie)
-  const catLabel = cat?.label_fr || ''
-  let md = `**${term.terme_fr}**`
-  if (term.terme_ar) md += ` — ${term.terme_ar}`
-  md += `\n\n${term.definition_fr}`
-  if (term.reference) md += `\n\n*Réf: ${term.reference}*`
-  if (catLabel) md += `\n*Catégorie: ${catLabel}*`
-  return md
 }
 
 function MessageBubble({ msg }) {
@@ -201,8 +173,6 @@ export default function AIAssistantPage() {
     setMessages(prev => [...prev, userMsg])
 
     try {
-      const glossaryResults = searchGlossary(msg)
-
       let convId = activeConvId
       if (!convId) {
         const res = await aiAPI.createConversation({
@@ -214,24 +184,8 @@ export default function AIAssistantPage() {
         await loadConversations()
       }
 
-      let botReply = ''
-      if (glossaryResults.length > 0) {
-        botReply = `## Résultats du Glossaire des Déchets\n\n`
-        for (const term of glossaryResults) {
-          botReply += formatGlossaryResult(term) + '\n\n---\n\n'
-        }
-        botReply += `_Source : Glossaire conforme à la Loi n°01-19 et au Décret exécutif n°06-104_`
-      }
-
       const res = await aiAPI.sendMessage(convId, { message: msg })
-      const aiReply = res.data.reponse || ''
-
-      let finalReply = botReply
-      if (botReply && aiReply) {
-        finalReply += '\n\n---\n\n## Réponse de l\'Assistant IA\n\n' + aiReply
-      } else if (aiReply) {
-        finalReply = aiReply
-      }
+      const finalReply = res.data.reponse || ''
 
       setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ASSISTANT', message: finalReply }])
       if (!activeConvId) await loadConversations()
