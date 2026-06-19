@@ -26,8 +26,8 @@ def detecter_anomalies_bsd():
             delta = (aujourd_hui - bsd.date_creation).days
             if delta > 7:
                 anomalies.append({
-                    'type': 'bsd_incomplet',
-                    'niveau': 'warning',
+                    'type': 'BSD_ANOMALIE',
+                    'niveau': 'MOYEN',
                     'description': f'BSD #{bsd.numero} en brouillon depuis plus de 7 jours',
                     'entite_type': 'BSD',
                     'entite_id': bsd.id,
@@ -37,8 +37,8 @@ def detecter_anomalies_bsd():
             delta = (aujourd_hui - bsd.date_emission).days
             if delta > 14:
                 anomalies.append({
-                    'type': 'bsd_retard',
-                    'niveau': 'danger',
+                    'type': 'BSD_ANOMALIE',
+                    'niveau': 'ELEVE',
                     'description': f'BSD #{bsd.numero} en retard (émis le {bsd.date_emission})',
                     'entite_type': 'BSD',
                     'entite_id': bsd.id,
@@ -55,8 +55,8 @@ def detecter_anomalies_agrements():
         if agr.date_fin:
             if agr.date_fin < aujourd_hui:
                 anomalies.append({
-                    'type': 'agrement_expire',
-                    'niveau': 'critique',
+                    'type': 'AGREMENT_EXPIRE',
+                    'niveau': 'CRITIQUE',
                     'description': f'Agrément #{agr.numero_agrement} expiré le {agr.date_fin}',
                     'entite_type': 'Agrement',
                     'entite_id': agr.id,
@@ -64,8 +64,8 @@ def detecter_anomalies_agrements():
                 })
             elif agr.date_fin < aujourd_hui + timedelta(days=30):
                 anomalies.append({
-                    'type': 'agrement_bientot_expire',
-                    'niveau': 'warning',
+                    'type': 'AGREMENT_EXPIRING',
+                    'niveau': 'MOYEN',
                     'description': f'Agrément #{agr.numero_agrement} expire bientôt le {agr.date_fin}',
                     'entite_type': 'Agrement',
                     'entite_id': agr.id,
@@ -79,7 +79,7 @@ class AIConversationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return AIConversation.objects.filter(utilisateur=self.request.user).prefetch_related('messages')
+        return AIConversation.objects.filter(user=self.request.user).prefetch_related('messages')
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -87,7 +87,7 @@ class AIConversationViewSet(viewsets.ModelViewSet):
         return AIConversationSerializer
 
     def perform_create(self, serializer):
-        serializer.save(utilisateur=self.request.user)
+        serializer.save(user=self.request.user)
 
     @action(detail=True, methods=['post'])
     def envoyer_message(self, request, pk=None):
@@ -96,28 +96,28 @@ class AIConversationViewSet(viewsets.ModelViewSet):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        message_utilisateur = serializer.validated_data['message']
+        message_user = serializer.validated_data['message']
         contexte_supp = serializer.validated_data.get('contexte_supplementaire', {})
 
         AIMessage.objects.create(
             conversation=conversation,
-            role='user',
-            message=message_utilisateur,
+            role='USER',
+            message=message_user,
             contexte_json=contexte_supp
         )
-        conversation.date_derniere_activite = timezone.now()
+        conversation.last_message_at = timezone.now()
         conversation.save()
 
-        reponse_ia = self._generer_reponse_intelligente(message_utilisateur, conversation, contexte_supp)
+        reponse_ia = self._generer_reponse_intelligente(message_user, conversation, contexte_supp)
 
         AIMessage.objects.create(
             conversation=conversation,
-            role='assistant',
+            role='ASSISTANT',
             message=reponse_ia['message'],
             contexte_json=reponse_ia.get('contexte', {})
         )
 
-        conversation.date_derniere_activite = timezone.now()
+        conversation.last_message_at = timezone.now()
         conversation.save()
 
         return Response({'reponse': reponse_ia['message'], 'contexte': reponse_ia.get('contexte', {})})
@@ -362,21 +362,21 @@ Comment puis-je vous aider aujourd'hui ?"""
             return Response({'error': 'La question est requise'}, status=status.HTTP_400_BAD_REQUEST)
 
         conversation = AIConversation.objects.create(
-            utilisateur=request.user,
+            user=request.user,
             contexte=contexte_type,
             entite_id=entite_id,
             titre=f"Analyse: {contexte_type} #{entite_id or ''}"
         )
         AIMessage.objects.create(
             conversation=conversation,
-            role='user',
+            role='USER',
             message=question
         )
 
         reponse = self._generer_reponse_intelligente(question, conversation, {})
         AIMessage.objects.create(
             conversation=conversation,
-            role='assistant',
+            role='ASSISTANT',
             message=reponse['message'],
             contexte_json=reponse.get('contexte', {})
         )
@@ -405,8 +405,8 @@ class AIMessageViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         conversation_id = self.request.query_params.get('conversation_id')
         if conversation_id:
-            return AIMessage.objects.filter(conversation_id=conversation_id, conversation__utilisateur=self.request.user)
-        return AIMessage.objects.filter(conversation__utilisateur=self.request.user).select_related('conversation')
+            return AIMessage.objects.filter(conversation_id=conversation_id, conversation__user=self.request.user)
+        return AIMessage.objects.filter(conversation__user=self.request.user).select_related('conversation')
 
 
 class AIAlertViewSet(viewsets.ModelViewSet):
@@ -414,7 +414,7 @@ class AIAlertViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = AIAlert.objects.filter(utilisateur=self.request.user)
+        qs = AIAlert.objects.filter(user=self.request.user)
         est_lue = self.request.query_params.get('est_lue')
         if est_lue is not None:
             qs = qs.filter(est_lue=(est_lue.lower() == 'true'))
@@ -447,7 +447,7 @@ class AIAlertViewSet(viewsets.ModelViewSet):
                     type_alerte=anomalie['type'],
                     niveau=anomalie['niveau'],
                     description=anomalie['description'],
-                    utilisateur=user,
+                    user=user,
                     entite_type=anomalie['entite_type'],
                     entite_id=anomalie['entite_id'],
                     lien=anomalie['lien']
@@ -458,7 +458,7 @@ class AIAlertViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def resume_alertes(self, request):
-        alertes = AIAlert.objects.filter(utilisateur=request.user)
+        alertes = AIAlert.objects.filter(user=request.user)
         par_type = alertes.values('type_alerte').annotate(count=Count('id'))
         par_niveau = alertes.values('niveau').annotate(count=Count('id'))
         non_lues = alertes.filter(est_lue=False).count()
@@ -523,7 +523,7 @@ class AIRecommendationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return AIRecommendation.objects.filter(utilisateur=self.request.user)
+        return AIRecommendation.objects.filter(user=self.request.user)
 
     @action(detail=True, methods=['post'])
     def changer_statut(self, request, pk=None):
@@ -532,7 +532,7 @@ class AIRecommendationViewSet(viewsets.ModelViewSet):
         if nouveau_statut not in dict(AIRecommendation.STATUT_CHOICES):
             return Response({'error': 'Statut invalide'}, status=status.HTTP_400_BAD_REQUEST)
         recommendation.statut = nouveau_statut
-        if nouveau_statut == 'traitee':
+        if nouveau_statut == 'REALISEE':
             recommendation.date_traitement = timezone.now()
         recommendation.save()
         return Response({'statut': 'ok'})
@@ -540,8 +540,8 @@ class AIRecommendationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def recommendations_actives(self, request):
         recommendations = AIRecommendation.objects.filter(
-            utilisateur=request.user,
-            statut__in=['nouvelle', 'en_cours']
+            user=request.user,
+            statut__in=['ACTIVE', 'EN_ATTENTE']
         )[:10]
         serializer = self.get_serializer(recommendations, many=True)
         return Response({'recommendations': serializer.data})
@@ -554,24 +554,24 @@ class AIDashboardViewSet(viewsets.ViewSet):
     def statistiques(self, request):
         user = request.user
         questions_posees = AIMessage.objects.filter(
-            conversation__utilisateur=user, role='user'
+            conversation__user=user, role='USER'
         ).count()
-        alertes_detectees = AIAlert.objects.filter(utilisateur=user).count()
-        alertes_non_lues = AIAlert.objects.filter(utilisateur=user, est_lue=False).count()
+        alertes_detectees = AIAlert.objects.filter(user=user).count()
+        alertes_non_lues = AIAlert.objects.filter(user=user, est_lue=False).count()
 
         bsd_analyses = AIConversation.objects.filter(
-            utilisateur=user, contexte='bsd'
+            user=user, contexte='bsd'
         ).count()
 
         agrements_verifies = AIConversation.objects.filter(
-            utilisateur=user, contexte='agrement'
+            user=user, contexte='agrement'
         ).count()
 
         rapports_generes = AIRecommendation.objects.filter(
-            utilisateur=user, type_recommandation='analyse'
+            user=user, type_recommandation='analyse'
         ).count()
 
-        conversations_total = AIConversation.objects.filter(utilisateur=user).count()
+        conversations_total = AIConversation.objects.filter(user=user).count()
 
         data = {
             'questions_posees': questions_posees,
@@ -587,23 +587,23 @@ class AIDashboardViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def alertes_recuperees(self, request):
-        alertes = AIAlert.objects.filter(utilisateur=request.user, est_lue=False)[:20]
+        alertes = AIAlert.objects.filter(user=request.user, est_lue=False)[:20]
         serializer = AIAlertSerializer(alertes, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def historique_recent(self, request):
         conversations = AIConversation.objects.filter(
-            utilisateur=request.user
-        ).order_by('-date_derniere_activite')[:10]
+            user=request.user
+        ).order_by('-last_message_at')[:10]
         serializer = AIConversationSerializer(conversations, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def recommandations_actives(self, request):
         recommendations = AIRecommendation.objects.filter(
-            utilisateur=request.user,
-            statut__in=['nouvelle', 'en_cours']
+            user=request.user,
+            statut__in=['ACTIVE', 'EN_ATTENTE']
         ).order_by('-date_creation')[:10]
         serializer = AIRecommendationSerializer(recommendations, many=True)
         return Response({'recommendations': serializer.data})

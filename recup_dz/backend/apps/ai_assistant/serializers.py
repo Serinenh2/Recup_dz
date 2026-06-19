@@ -89,6 +89,25 @@ class AIRecommendationSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class AIConversationCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AIConversation
+        fields = ['id', 'contexte', 'entite_id', 'titre', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+
+class AIMessageCreateSerializer(serializers.Serializer):
+    message = serializers.CharField()
+    contexte_supplementaire = serializers.JSONField(required=False, default=dict)
+
+
+class KnowledgeBaseCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KnowledgeBase
+        fields = '__all__'
+        read_only_fields = ['id', 'date_mise_a_jour']
+
+
 class AIStatisticsSerializer(serializers.Serializer):
     total_conversations = serializers.IntegerField()
     total_messages = serializers.IntegerField()
