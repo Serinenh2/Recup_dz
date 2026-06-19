@@ -1,10 +1,13 @@
 from rest_framework import viewsets, filters
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django_filters.rest_framework import DjangoFilterBackend
+from apps.accounts.permissions import ModulePermission
 from .models import Document
 from .serializers import DocumentSerializer
 
 class DocumentViewSet(viewsets.ModelViewSet):
+    module_label     = 'archive'
+    permission_classes = [ModulePermission]
     queryset         = Document.objects.select_related('uploaded_by').all()
     serializer_class = DocumentSerializer
     parser_classes   = [MultiPartParser, FormParser, JSONParser]

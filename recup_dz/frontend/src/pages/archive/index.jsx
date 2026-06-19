@@ -301,7 +301,7 @@ export default function ArchivePage() {
   const [search,    setSearch]    = useState('')
   const [catFilter, setCatFilter] = useState('')
 
-  const isAdmin = user?.role === 'ADMIN' || user?.is_superuser
+  const isAdmin = user?.is_superuser || user?.permissions?.includes('archive.add_document') || user?.permissions?.includes('archive.change_document')
 
   const load = async () => {
     setLoading(true)

@@ -4,11 +4,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
+from apps.accounts.permissions import ModulePermission
 from .models import BordereauSuiviDechet
 from .serializers import BSDSerializer
 from .generate_bsd import generate_bsd_pdf
 
 class BSDViewSet(viewsets.ModelViewSet):
+    module_label     = 'bsd'
+    permission_classes = [ModulePermission]
     queryset = BordereauSuiviDechet.objects.select_related('recuperateur').all()
     serializer_class = BSDSerializer
     filter_backends  = [filters.SearchFilter, DjangoFilterBackend]

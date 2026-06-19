@@ -11,35 +11,43 @@ import AIAssistantPage from '../../pages/ai/index'
 import clsx from 'clsx'
 
 const NAV_BASE = [
-  { to: '/dashboard',      icon: LayoutDashboard, label: 'Tableau de bord'     },
-  { to: '/recuperateurs',  icon: Users,            label: 'Récupérateurs'       },
-  { to: '/operateurs',     icon: Building2,        label: 'Opérateurs'          },
-  { to: '/administration', icon: Landmark,         label: "Administration Env." },
- { to: '/tracabilite',     icon: Package,          label: 'Tracabilite'         },
-  { to: '/operations',      icon: ClipboardList,    label: 'Opérations'          },
-  { to: '/nomenclature',   icon: BookOpen,         label: 'Nomenclature'        },
-  { to: '/glossaire',      icon: GraduationCap,    label: 'Glossaire'           },
-  { to: '/documents',      icon: FileText,         label: 'Documents'           },        
-  { to: '/stats',          icon: BarChart3,        label: 'Statistiques'        },
-  { to: '/archive',        icon: FolderOpen,       label: 'Archive'             },
-  { to: '/alertes',        icon: Bell,             label: 'Alertes'             },
-  { to: '/bsd',             icon: FileText,         label: 'BSD'                 },
-  { to: '/declarations',    icon: FileText,         label: 'Déclarations'        },
+  { to: '/dashboard',      icon: LayoutDashboard, label: 'Tableau de bord',     permission: null },
+  { to: '/recuperateurs',  icon: Users,            label: 'Récupérateurs',       permission: 'recuperateurs.view_recuperateur' },
+  { to: '/operateurs',     icon: Building2,        label: 'Opérateurs',          permission: 'operateurs.view_operateur' },
+  { to: '/administration', icon: Landmark,         label: 'Administration Env.', permission: 'administration.view_administrationenvironnement' },
+  { to: '/tracabilite',    icon: Package,          label: 'Tracabilite',         permission: 'operations.view_operationrecuperation' },
+  { to: '/operations',     icon: ClipboardList,    label: 'Opérations',          permission: 'operations.view_operationrecuperation' },
+  { to: '/nomenclature',   icon: BookOpen,         label: 'Nomenclature',        permission: null },
+  { to: '/glossaire',      icon: GraduationCap,    label: 'Glossaire',           permission: null },
+  { to: '/documents',      icon: FileText,         label: 'Documents',           permission: 'archive.view_document' },
+  { to: '/stats',          icon: BarChart3,        label: 'Statistiques',        permission: null },
+  { to: '/archive',        icon: FolderOpen,       label: 'Archive',             permission: 'archive.view_document' },
+  { to: '/alertes',        icon: Bell,             label: 'Alertes',             permission: null },
+  { to: '/bsd',            icon: FileText,         label: 'BSD',                 permission: 'bsd.view_bordereausuividechet' },
+  { to: '/declarations',   icon: FileText,         label: 'Déclarations',        permission: 'declarations.view_declaration' },
 ]
 
 function getNav(user) {
   const nav = [...NAV_BASE]
   if (user?.role === 'SUPERADMIN' || user?.is_superuser) {
-    nav.push({ to: '/superadmin', icon: Crown, label: 'Clients SaaS' })
+    nav.push({ to: '/superadmin', icon: Crown, label: 'Clients SaaS', permission: null })
+    nav.push({ to: '/admin/roles', icon: Shield, label: 'Gestion Rôles', permission: null })
   }
   return nav
 }
 
 function Sidebar({ collapsed, onToggle, mobileOpen, onClose }) {
-  const { user, logout } = useAuthStore()
+  const { user, logout, hasPermission } = useAuthStore()
   const navigate  = useNavigate()
   const location  = useLocation()
   const initials  = `${user?.first_name?.[0] || ''}${user?.last_name?.[0] || ''}`.toUpperCase() || 'U'
+  const allPerms  = user?.permissions || []
+
+  const filteredNav = getNav(user).filter(item => {
+    if (!item.permission) return true
+    if (user?.is_superuser) return true
+    return allPerms.includes(item.permission)
+  })
 
   return (
     <>
@@ -94,14 +102,14 @@ function Sidebar({ collapsed, onToggle, mobileOpen, onClose }) {
               <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                 {user?.first_name} {user?.last_name}
               </p>
-              <span className="text-[0.6rem] text-slate-400">{user?.role}</span>
+              <span className="text-[0.6rem] text-slate-400">{user?.role_display || user?.role}</span>
             </div>
           </div>
         )}
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-          {getNav(user).map(item => {
+          {filteredNav.map(item => {
             const active = location.pathname === item.to ||
               (item.to !== '/dashboard' && location.pathname.startsWith(item.to))
             return (

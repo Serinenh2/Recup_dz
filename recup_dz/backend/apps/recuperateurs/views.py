@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count
 from datetime import date, timedelta
+from apps.accounts.permissions import ModulePermission
 from .models import Recuperateur, AgrementRecuperateur
 from .serializers import RecuperateurSerializer, RecuperateurListSerializer, AgrementSerializer
 from .alerts import get_all_alerts, check_droit_recuperation
@@ -13,10 +14,6 @@ from .alerts import get_all_alerts, check_droit_recuperation
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def verifier_droit(request):
-    """
-    Vérifie si un récupérateur peut collecter un déchet.
-    POST { recuperateur_id, code_dechet, classe_dechet }
-    """
     recuperateur_id = request.data.get('recuperateur_id')
     code_dechet     = request.data.get('code_dechet', '')
     classe_dechet   = request.data.get('classe_dechet', '')
@@ -27,64 +24,10 @@ def verifier_droit(request):
 
 
 class AgrementViewSet(viewsets.ModelViewSet):
+    module_label    = 'recuperateurs'
     queryset         = AgrementRecuperateur.objects.select_related('recuperateur').all()
     serializer_class = AgrementSerializer
-    filter_backends  = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['recuperateur','type_agrement','statut','etendue_geo']
-    search_fields    = ['numero_agrement','codes_dechets']
-
-    @action(detail=False, methods=['get'])
-    def alerts(self, request):
-        return Response({'alerts': get_all_alerts(),
-                         'total': len(get_all_alerts()),
-                         'critical': sum(1 for a in get_all_alerts() if a['severity']=='critical')})
-
-    @action(detail=False, methods=['get'])
-    def stats(self, request):
-        qs    = AgrementRecuperateur.objects.all()
-        today = date.today()
-        return Response({
-            'total':       qs.count(),
-            'actifs':      qs.filter(statut='ACTIF').count(),
-            'expires':     qs.filter(statut='ACTIF', date_fin__lt=today).count(),
-            'suspendus':   qs.filter(statut='SUSPENDU').count(),
-            'par_type':    list(qs.values('type_agrement').annotate(count=Count('id'))),
-            'par_etendue': list(qs.values('etendue_geo').annotate(count=Count('id'))),
-        })
-
-
-class RecuperateurViewSet(viewsets.ModelViewSet):
-    queryset        = Recuperateur.objects.prefetch_related('agrements').all()
-    filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
-    search_fields   = ['nom_raison_sociale','nom_commercial','numero_id','nif','nis','registre_commerce']
-    filterset_fields= ['type_recuperateur','statut','wilaya']
-
-    def get_serializer_class(self):
-        return RecuperateurListSerializer if self.action == 'list' else RecuperateurSerializer
-
-    @action(detail=False, methods=['get'])
-    def stats(self, request):
-        qs    = Recuperateur.objects.all()
-        today = date.today()
-        soon  = today + timedelta(days=60)
-        return Response({
-            'total':      qs.count(),
-            'actifs':     qs.filter(statut='ACTIF').count(),
-            'suspendus':  qs.filter(statut='SUSPENDU').count(),
-            'en_attente': qs.filter(statut='EN_ATTENTE').count(),
-            'par_type':   list(qs.values('type_recuperateur').annotate(count=Count('id'))),
-            'par_wilaya': list(qs.values('wilaya').annotate(count=Count('id')).order_by('-count')[:15]),
-            'par_statut': list(qs.values('statut').annotate(count=Count('id'))),
-        })
-
-    @action(detail=False, methods=['get'])
-    def alerts(self, request):
-        alerts = get_all_alerts()
-        return Response({'total': len(alerts), 'alerts': alerts})
-
-class AgrementViewSet(viewsets.ModelViewSet):
-    queryset         = AgrementRecuperateur.objects.select_related('recuperateur').all()
-    serializer_class = AgrementSerializer
+    permission_classes = [ModulePermission]
     filter_backends  = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['recuperateur','type_agrement','statut','etendue_geo']
     search_fields    = ['numero_agrement','codes_dechets']
@@ -106,20 +49,22 @@ class AgrementViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        qs = AgrementRecuperateur.objects.all()
+        qs    = AgrementRecuperateur.objects.all()
         today = date.today()
         return Response({
-            'total':      qs.count(),
-            'actifs':     qs.filter(statut='ACTIF').count(),
-            'expires':    qs.filter(statut='ACTIF', date_fin__lt=today).count(),
-            'suspendus':  qs.filter(statut='SUSPENDU').count(),
-            'par_type':   list(qs.values('type_agrement').annotate(count=Count('id'))),
-            'par_etendue':list(qs.values('etendue_geo').annotate(count=Count('id'))),
+            'total':       qs.count(),
+            'actifs':      qs.filter(statut='ACTIF').count(),
+            'expires':     qs.filter(statut='ACTIF', date_fin__lt=today).count(),
+            'suspendus':   qs.filter(statut='SUSPENDU').count(),
+            'par_type':    list(qs.values('type_agrement').annotate(count=Count('id'))),
+            'par_etendue': list(qs.values('etendue_geo').annotate(count=Count('id'))),
         })
 
 
 class RecuperateurViewSet(viewsets.ModelViewSet):
+    module_label    = 'recuperateurs'
     queryset        = Recuperateur.objects.prefetch_related('agrements').all()
+    permission_classes = [ModulePermission]
     filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
     search_fields   = ['nom_raison_sociale','nom_commercial','numero_id','nif','nis','registre_commerce']
     filterset_fields= ['type_recuperateur','statut','wilaya']

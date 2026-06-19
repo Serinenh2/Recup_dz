@@ -17,6 +17,7 @@ import InspectionsPage  from './pages/inspections/index'
 import StatsPage        from './pages/stats/index'
 import ArchivePage      from './pages/archive/index'
 import SuperAdminPage   from './pages/superadmin/index'
+import AdminRolesPage   from './pages/admin/roles/index'
 import ProfilPage       from './pages/profil/ProfilPage'
 import DocumentsPage from './pages/documents/index'
 import TracabilitePage from './pages/tracabilite/index'
@@ -37,6 +38,14 @@ function PrivateRoute({ children }) {
     </div>
   )
   return user ? children : <Navigate to="/login" replace />
+}
+
+function SuperAdminRoute({ children }) {
+  const user = useAuthStore(s => s.user)
+  if (user && !user.is_superuser && user.role !== 'SUPERADMIN') {
+    return <Navigate to="/dashboard" replace />
+  }
+  return children
 }
 
 export default function App() {
@@ -63,7 +72,8 @@ export default function App() {
         <Route path="stats"               element={<StatsPage />} />
         <Route path="archive"             element={<ArchivePage />} />
         <Route path="documents"           element={<DocumentsPage />} />
-        <Route path="superadmin"          element={<SuperAdminPage />} />
+        <Route path="superadmin"          element={<SuperAdminRoute><SuperAdminPage /></SuperAdminRoute>} />
+        <Route path="admin/roles"         element={<SuperAdminRoute><AdminRolesPage /></SuperAdminRoute>} />
         <Route path="profil"              element={<ProfilPage />} />
         <Route path="tracabilite"         element={<TracabilitePage />} />
         <Route path="operations"          element={<OperationsPage />} />

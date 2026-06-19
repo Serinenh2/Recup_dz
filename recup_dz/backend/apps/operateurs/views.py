@@ -3,10 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count
+from apps.accounts.permissions import ModulePermission
 from .models import Operateur
 from .serializers import OperateurSerializer, OperateurListSerializer
 
 class OperateurViewSet(viewsets.ModelViewSet):
+    module_label     = 'operateurs'
+    permission_classes = [ModulePermission]
     queryset        = Operateur.objects.all()
     filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
     search_fields   = ['raison_sociale','nif','nis','nin','registre_commerce','num_agrement']

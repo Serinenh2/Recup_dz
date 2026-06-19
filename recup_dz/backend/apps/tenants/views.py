@@ -4,12 +4,15 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.db.models import Count
+from apps.accounts.permissions import IsSuperAdmin
 from .models import Tenant
 from .serializers import TenantSerializer
 
 User = get_user_model()
 
 class TenantViewSet(viewsets.ModelViewSet):
+    module_label     = 'tenants'
+    permission_classes = [IsSuperAdmin]
     queryset         = Tenant.objects.all()
     serializer_class = TenantSerializer
     filter_backends  = [filters.SearchFilter, DjangoFilterBackend]

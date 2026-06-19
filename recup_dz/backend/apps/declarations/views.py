@@ -4,11 +4,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
+from apps.accounts.permissions import ModulePermission
 from .models import Declaration
 from .serializers import DeclarationSerializer
 from .generate_dsd import generate_dsd_pdf
 
 class DeclarationViewSet(viewsets.ModelViewSet):
+    module_label     = 'declarations'
+    permission_classes = [ModulePermission]
     queryset         = Declaration.objects.select_related('recuperateur').all()
     serializer_class = DeclarationSerializer
     filter_backends  = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]

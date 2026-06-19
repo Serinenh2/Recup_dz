@@ -3,10 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum, Count
+from apps.accounts.permissions import ModulePermission
 from .models import OperationRecuperation
 from .serializers import OperationSerializer
 
 class OperationViewSet(viewsets.ModelViewSet):
+    module_label     = 'operations'
+    permission_classes = [ModulePermission]
     queryset         = OperationRecuperation.objects.select_related(
         'recuperateur','generateur','transporteur','valorisateur','eliminateur'
     ).all()
