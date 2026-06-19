@@ -7,6 +7,7 @@ import {
   Award, Bell, GraduationCap, Building2, Landmark, FolderOpen, Crown, Bot
 } from 'lucide-react'
 import { useAuthStore } from '../../store'
+import AIAssistantPage from '../../pages/ai/index'
 import clsx from 'clsx'
 
 const NAV_BASE = [
@@ -24,7 +25,6 @@ const NAV_BASE = [
   { to: '/alertes',        icon: Bell,             label: 'Alertes'             },
   { to: '/bsd',             icon: FileText,         label: 'BSD'                 },
   { to: '/declarations',    icon: FileText,         label: 'Déclarations'        },
-  { to: '/assistant-ia',   icon: Bot,              label: 'Assistant IA'        },
 ]
 
 function getNav(user) {
@@ -187,6 +187,7 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+      <AIAssistantPage />
     </div>
   )
 }
