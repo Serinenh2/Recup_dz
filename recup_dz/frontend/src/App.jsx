@@ -20,6 +20,10 @@ import SuperAdminPage   from './pages/superadmin/index'
 import ProfilPage       from './pages/profil/ProfilPage'
 import DocumentsPage from './pages/documents/index'
 import TracabilitePage from './pages/tracabilite/index'
+import AIAssistantPage from './pages/ai/index'
+import OperationsPage from './pages/operations/index'
+import BSDPage from './pages/bsd/index'
+import DeclarationsPage from './pages/declarations/index'
 
 function PrivateRoute({ children }) {
   const user    = useAuthStore(s => s.user)
@@ -62,6 +66,10 @@ export default function App() {
         <Route path="superadmin"          element={<SuperAdminPage />} />
         <Route path="profil"              element={<ProfilPage />} />
         <Route path="tracabilite"         element={<TracabilitePage />} />
+        <Route path="operations"          element={<OperationsPage />} />
+        <Route path="bsd"                 element={<BSDPage />} />
+        <Route path="declarations"        element={<DeclarationsPage />} />
+        <Route path="assistant-ia"       element={<AIAssistantPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

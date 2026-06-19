@@ -6,7 +6,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import AIConversation, AIMessage, AIAlert, KnowledgeBase, AIRecommendation
 from .serializers import (
-    AIConversationSerializer, AIConversationCreateSerializer,
+    AIConversationSerializer, AIConversationListSerializer, AIConversationCreateSerializer,
     AIMessageSerializer, AIMessageCreateSerializer,
     AIAlertSerializer, KnowledgeBaseSerializer, KnowledgeBaseCreateSerializer,
     AIRecommendationSerializer, AIStatisticsSerializer
@@ -79,11 +79,15 @@ class AIConversationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return AIConversation.objects.filter(user=self.request.user).prefetch_related('messages')
+        return AIConversation.objects.filter(user=self.request.user).prefetch_related('messages').annotate(
+            _messages_count=Count('messages')
+        )
 
     def get_serializer_class(self):
         if self.action == 'create':
             return AIConversationCreateSerializer
+        if self.action == 'list':
+            return AIConversationListSerializer
         return AIConversationSerializer
 
     def perform_create(self, serializer):

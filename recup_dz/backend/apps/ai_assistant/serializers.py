@@ -89,6 +89,25 @@ class AIRecommendationSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class AIConversationListSerializer(serializers.ModelSerializer):
+    user = UserMinimalSerializer(read_only=True)
+    contexte_display = serializers.CharField(source='get_contexte_display', read_only=True)
+    messages_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AIConversation
+        fields = [
+            'id', 'user', 'contexte', 'contexte_display', 'entite_id', 'titre',
+            'created_at', 'updated_at', 'last_message_at', 'messages_count'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'last_message_at']
+
+    def get_messages_count(self, obj):
+        if hasattr(obj, '_messages_count'):
+            return obj._messages_count
+        return obj.messages.count()
+
+
 class AIConversationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AIConversation
@@ -109,20 +128,10 @@ class KnowledgeBaseCreateSerializer(serializers.ModelSerializer):
 
 
 class AIStatisticsSerializer(serializers.Serializer):
-    total_conversations = serializers.IntegerField()
-    total_messages = serializers.IntegerField()
-    total_alertes = serializers.IntegerField()
+    questions_posees = serializers.IntegerField()
+    alertes_detectees = serializers.IntegerField()
+    bsd_analyses = serializers.IntegerField()
+    agrements_verifies = serializers.IntegerField()
+    rapports_generes = serializers.IntegerField()
+    conversations_total = serializers.IntegerField()
     alertes_non_lues = serializers.IntegerField()
-    total_knowledge_base = serializers.IntegerField()
-    knowledge_base_active = serializers.IntegerField()
-    total_recommendations = serializers.IntegerField()
-    recommendations_actives = serializers.IntegerField()
-    agrements_total = serializers.IntegerField()
-    agrements_expirees = serializers.IntegerField()
-    agrements_bientot_expirees = serializers.IntegerField()
-    bsd_total = serializers.IntegerField()
-    bsd_anomalies = serializers.IntegerField()
-    operations_en_cours = serializers.IntegerField()
-    quantite_stock_en_cours = serializers.CharField()
-    anomalies_bsd = serializers.ListField(child=serializers.DictField())
-    anomalies_agrements = serializers.ListField(child=serializers.DictField())
