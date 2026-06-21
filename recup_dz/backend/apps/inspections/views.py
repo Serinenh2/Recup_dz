@@ -4,11 +4,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
+from apps.accounts.permissions import ModulePermission
 from .models import Inspection
 from .serializers import InspectionSerializer
 from .generate_pv import generate_pv_pdf
 
 class InspectionViewSet(viewsets.ModelViewSet):
+    module_label     = 'inspections'
+    permission_classes = [ModulePermission]
     queryset = Inspection.objects.select_related('recuperateur','inspecteur').all()
     serializer_class = InspectionSerializer
     filter_backends  = [DjangoFilterBackend, filters.SearchFilter]
