@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import {
   User, Shield, Save, Building2, CheckCircle2,
   Award, Plus, X, ChevronDown, ChevronRight, AlertTriangle,
-  Ban, XCircle, Edit2
+  Ban, XCircle, Edit2, Layers
 } from 'lucide-react'
 import { useAuthStore } from '../../store'
 import api from '../../api'
@@ -11,6 +11,7 @@ import { WILAYAS, getCommunesByWilaya } from '../../utils/algeria_geo'
 import { NOMENCLATURE } from '../nomenclature/nomenclatureData'
 import { NOMENCLATURE_GOLD } from '../nomenclature/nomenclatureGold'
 import DateInput from '../../components/common/DateInput'
+import SpecialisationPicker from './SpecialisationPicker'
 
 // Merged lookup — NOMENCLATURE_GOLD has real designations + dangerosite + annexe
 const NOM_MAP = (() => {
@@ -459,6 +460,7 @@ export default function ProfilPage() {
   const [hasAgrement, setHasAgrement] = useState(null)
   const [showAgrForm, setShowAgrForm] = useState(false)
   const [loadingAgr,  setLoadingAgr]  = useState(false)
+  const [specialisation, setSpecialisation] = useState([])
 
   const isRecuperateur = !!(user?.role === 'RECUPERATEUR' || user?.recuperateur_id)
 
@@ -473,6 +475,9 @@ export default function ProfilPage() {
           setRecup(r.data)
           recForm.reset(r.data)
           if (r.data.wilaya) setCommunes(getCommunesByWilaya(r.data.wilaya))
+          if (r.data.specialisation) {
+            setSpecialisation(r.data.specialisation.split(',').map(s => s.trim()).filter(Boolean))
+          }
         }).catch(() => {})
     }
   }, [isRecuperateur])
@@ -709,6 +714,33 @@ export default function ProfilPage() {
         </div>
       )}
 
+      {/* ── Spécialisation du récupérateur ── */}
+      {isRecuperateur && recup && (
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Layers size={16} className="text-primary-600"/> Spécialisation — Types de déchets récupérés
+            </h3>
+          </div>
+          <div className="card p-3 bg-blue-50/50 border-blue-200 mb-4">
+            <p className="text-xs text-blue-700">
+              <strong>ℹ️</strong> Sélectionnez les types de déchets que vous récupérez. Seuls les codes
+              de la nomenclature correspondant à votre sélection seront affichés dans la page Nomenclature.
+            </p>
+          </div>
+          <SpecialisationPicker
+            value={specialisation}
+            onChange={async (next) => {
+              setSpecialisation(next)
+              try {
+                await api.patch('/accounts/mon-recuperateur/', { specialisation: next.join(',') })
+                toast.success('Spécialisation mise à jour')
+              } catch { toast.error('Erreur sauvegarde spécialisation') }
+            }}
+          />
+        </div>
+      )}
+
       {/* ── Section Agrément ── */}
       {isRecuperateur && !loadingAgr && (
         <div className="card p-5">
@@ -807,4 +839,3 @@ export default function ProfilPage() {
     </div>
   )
 }
-

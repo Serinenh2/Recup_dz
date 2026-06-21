@@ -18,6 +18,11 @@ class Recuperateur(models.Model):
         ('EURL','EURL'),('SARL','SARL'),('SPA','SPA'),
         ('SNC','SNC'),('PHYSIQUE','Personne physique'),('AUTRE','Autre'),
     ]
+    specialisation = models.TextField(
+        blank=True,
+        default='',
+        help_text="Liste des sous-types de déchets sélectionnés, séparés par des virgules (ex: emb_plastique_pet,sp_huiles)"
+    )
 
     numero_id          = models.CharField(max_length=30, unique=True, blank=True)
     user               = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
